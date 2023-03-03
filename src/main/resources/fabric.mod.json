@@ -1,0 +1,28 @@
+{
+	"schemaVersion": 1,
+	"id": "better-explosions",
+	"version": "${version}",
+	"name": "Better Explosions",
+	"description": "Are you tired of being frustrated by creepers and seeing their destructive griefing behavior? If so, this mod may be just what you need.",
+	"authors": [
+		"Skidam"
+	],
+	"contact": {
+	},
+	"license": "LGPL-3.0-or-later",
+	"icon": "assets/better-explosions/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+          "pl.skidam.betterexplosions.BetterExplosions"
+		]
+	},
+	"mixins": [
+		"better-explosions.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.14.14",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}

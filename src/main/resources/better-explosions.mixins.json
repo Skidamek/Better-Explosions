@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "pl.skidam.betterexplosions.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "CreeperEntityMixin",
+    "ServerWorldMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+	}
+}
