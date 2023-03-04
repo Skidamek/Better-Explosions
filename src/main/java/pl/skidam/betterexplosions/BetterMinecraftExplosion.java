@@ -15,10 +15,13 @@ import net.minecraft.entity.TntEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Util;
 import net.minecraft.util.hit.HitResult.Type;
@@ -35,6 +38,7 @@ import net.minecraft.world.explosion.EntityExplosionBehavior;
 import net.minecraft.world.explosion.Explosion;
 import net.minecraft.world.explosion.ExplosionBehavior;
 import org.jetbrains.annotations.Nullable;
+import pl.skidam.betterexplosions.data.RebuildExplosion;
 
 import static pl.skidam.betterexplosions.BetterExplosions.explosions;
 
@@ -43,7 +47,7 @@ import static pl.skidam.betterexplosions.BetterExplosions.explosions;
  * See {@link net.minecraft.world.explosion.Explosion}
  */
 
-public class MinecraftExplosion extends Explosion {
+public class BetterMinecraftExplosion extends Explosion {
     private static final ExplosionBehavior DEFAULT_BEHAVIOR = new ExplosionBehavior();
     private final World world;
     private final double x;
@@ -57,7 +61,7 @@ public class MinecraftExplosion extends Explosion {
     private final ObjectArrayList<BlockPos> affectedBlocks = new ObjectArrayList<>();
     private final Map<PlayerEntity, Vec3d> affectedPlayers = Maps.newHashMap();
 
-    public MinecraftExplosion(
+    public BetterMinecraftExplosion(
             World world,
             @Nullable Entity entity,
             @Nullable DamageSource damageSource,
@@ -208,19 +212,21 @@ public class MinecraftExplosion extends Explosion {
     }
 
     public void affectWorld(boolean particles) {
-        if (this.world.isClient) {
-            this.world
-                    .playSound(
-                            this.x,
-                            this.y,
-                            this.z,
-                            SoundEvents.ENTITY_GENERIC_EXPLODE,
-                            SoundCategory.BLOCKS,
-                            4.0F,
-                            (1.0F + (this.world.random.nextFloat() - this.world.random.nextFloat()) * 0.2F) * 0.7F,
-                            false
-                    );
-        }
+        // explode sound
+        RegistryEntry<SoundEvent> registryEntry = RegistryEntry.of(SoundEvent.of(SoundEvents.ENTITY_GENERIC_EXPLODE.getId()));
+        this.world.getPlayers().forEach(player -> {
+            if (player.squaredDistanceTo(x, y, z) < 256) { // 256 == (box) 16^2
+                double e = x - player.getX();
+                double f = y - player.getY();
+                double g = z - player.getZ();
+                double h = e * e + f * f + g * g;
+                double k = Math.sqrt(h);
+                Vec3d vec3d = new Vec3d(player.getX() + e / k * 2.0, player.getY() + f / k * 2.0, player.getZ() + g / k * 2.0);
+                long l = this.world.getRandom().nextLong();
+                ServerPlayerEntity serverPlayerEntity = (ServerPlayerEntity) player;
+                serverPlayerEntity.networkHandler.sendPacket(new PlaySoundS2CPacket(registryEntry, SoundCategory.BLOCKS, vec3d.getX(), vec3d.getY(), vec3d.getZ(), 4.0F, (1.0F + (this.world.random.nextFloat() - this.world.random.nextFloat()) * 0.2F) * 0.7F, l));
+            }
+        });
 
         if (particles) {
             ParticleEffect particleEffect;
@@ -231,35 +237,30 @@ public class MinecraftExplosion extends Explosion {
                 particleEffect = ParticleTypes.EXPLOSION;
             }
 
-            for(ServerPlayerEntity serverPlayerEntity : this.world.getServer().getPlayerManager().getPlayerList()) {
+            for (ServerPlayerEntity serverPlayerEntity : this.world.getServer().getPlayerManager().getPlayerList()) {
                 this.world.getServer().getWorld(this.world.getRegistryKey()).spawnParticles(serverPlayerEntity, particleEffect, false, this.x, this.y, this.z, 0, 0.0, 0.0, 0.0, (double)0.0F);
             }
         }
 
         Util.shuffle(this.affectedBlocks, this.world.random);
-        Map<BlockPos, BlockState> blocksToReverse = new HashMap<>(); // TODO store NBT data
+        Map<BlockPos, BlockState> blocksToRebuild = new HashMap<>(); // TODO store NBT data
 
-        // Normal explosion
+        // Normal minecraft explosion
         for (BlockPos blockPos : getAffectedBlocks()) {
             BlockState blockState = this.world.getBlockState(blockPos);
             if (!blockState.isAir()) {
                 this.world.getProfiler().push("better_explosions_explosion");
-                blocksToReverse.put(blockPos, blockState);
+                blocksToRebuild.put(blockPos, blockState);
                 this.world.setBlockState(blockPos, Blocks.AIR.getDefaultState(), 3);
                 this.world.getProfiler().pop();
             }
         }
 
-        /*
-          Reverse explosion stuff
-          See pl.skidam.betterexplosions.mixin.ServerWorldMixin
-         */
-
-        // sorts block from least y to greatest y
-        Utils.sortAffectedBlocks(this.affectedBlocks);
-        if (getAffectedBlocks().size() > 0 && blocksToReverse.size() > 0) {
-            ReverseExplosion reverseExplosion = new ReverseExplosion(false, 0, getAffectedBlocks(), blocksToReverse, this.world.getRegistryKey());
-            explosions.put(explosions.size(), reverseExplosion);
+        // Rebuild explosion stuff
+        // See pl.skidam.betterexplosions.mixin.ServerWorldMixin
+        if (getAffectedBlocks().size() > 0 && blocksToRebuild.size() > 0) {
+            RebuildExplosion rebuildExplosion = new RebuildExplosion(false, 0, blocksToRebuild, this.world.getRegistryKey());
+            explosions.put(explosions.size(), rebuildExplosion);
         }
     }
 
