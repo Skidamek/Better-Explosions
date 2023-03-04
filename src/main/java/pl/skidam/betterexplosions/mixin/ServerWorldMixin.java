@@ -13,7 +13,9 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import pl.skidam.betterexplosions.ReverseExplosion;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
@@ -30,10 +32,13 @@ public abstract class ServerWorldMixin {
     @Inject(method = "tick", at = @At("TAIL"))
     private void tick(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
 
+
         if (explosions.size() > 0) {
 
-            // for loop of explosions map
-            for (int i : explosions.keySet()) {
+            // loop of explosions map, we need to use iterator because we are removing elements from map
+            Iterator<Integer> explosionsIterator = explosions.keySet().iterator();
+            while (explosionsIterator.hasNext()) {
+                int i = explosionsIterator.next();
 
                 int tick = explosions.get(i).getTicks() + 1;
                 explosions.get(i).setTicks(tick);
@@ -47,17 +52,19 @@ public abstract class ServerWorldMixin {
 
                     // remove explosion from map if it's empty
                     if (affectedBlocks.size() == 0 || blocksToReverse.size() == 0 || world == null) {
-                        explosions.remove(i);
+                        explosionsIterator.remove();
                         continue;
                     }
 
                     ServerWorld serverWorld = this.server.getWorld(world);
+                    if (serverWorld == null) {
+                        explosionsIterator.remove();
+                        continue;
+                    }
 
                     for (BlockPos blockPos : affectedBlocks) {
                         BlockState blockState = blocksToReverse.get(blockPos);
                         if (blockState != null) {
-
-//                            System.out.println("reversing block: " + blockPos.toString() + " to " + blockState);
 
                             serverWorld.getProfiler().push("better_explosions_reverse_explosion");
 
@@ -72,10 +79,10 @@ public abstract class ServerWorldMixin {
                             serverWorld.setBlockState(blockPos, blockState);
                             serverWorld.getProfiler().pop();
 
-                            // remove block from map
+                            // remove block from lists
                             blocksToReverse.remove(blockPos);
                             affectedBlocks.remove(blockPos);
-                            break;
+                            break; // break loop to create animation and to prevent ConcurrentModificationException
                         }
                     }
 
@@ -83,7 +90,7 @@ public abstract class ServerWorldMixin {
                 }
 
                 // if tick is 160, then add explosion to reversing map
-                if (tick == 160) {
+                if (tick >= 160) {
                     explosions.get(i).setReversing(true);
                 }
             }

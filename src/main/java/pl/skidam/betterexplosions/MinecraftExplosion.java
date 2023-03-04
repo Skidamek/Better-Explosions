@@ -18,6 +18,7 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.Util;
 import net.minecraft.util.hit.HitResult.Type;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
@@ -227,16 +228,16 @@ public class MinecraftExplosion extends Explosion {
             }
         }
 
-//        Util.shuffle(this.affectedBlocks, this.world.random);
-        Map<BlockPos, BlockState> blocksToReverse = new HashMap<>(); // TODO save also containers (inventories of it)
+        Util.shuffle(this.affectedBlocks, this.world.random);
+        Map<BlockPos, BlockState> blocksToReverse = new HashMap<>(); // TODO store NBT data
 
         // Normal explosion
         for (BlockPos blockPos : getAffectedBlocks()) {
             BlockState blockState = this.world.getBlockState(blockPos);
-            blocksToReverse.put(blockPos, blockState);
             if (!blockState.isAir()) {
                 this.world.getProfiler().push("better_explosions_explosion");
-                this.world.setBlockState(blockPos, Blocks.AIR.getDefaultState());
+                blocksToReverse.put(blockPos, blockState);
+                this.world.setBlockState(blockPos, Blocks.AIR.getDefaultState(), 3);
                 this.world.getProfiler().pop();
             }
         }
@@ -245,6 +246,9 @@ public class MinecraftExplosion extends Explosion {
           Reverse explosion stuff
           See pl.skidam.betterexplosions.mixin.ServerWorldMixin
          */
+
+        // sorts block from least y to greatest y
+        beUtil.sortAffectedBlocks(this.affectedBlocks);
         if (getAffectedBlocks().size() > 0 && blocksToReverse.size() > 0) {
             ReverseExplosion reverseExplosion = new ReverseExplosion(false, 0, getAffectedBlocks(), blocksToReverse, this.world.getRegistryKey());
             explosions.put(explosions.size(), reverseExplosion);
