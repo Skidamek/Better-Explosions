@@ -15,7 +15,9 @@ import net.minecraft.entity.TntEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Util;
@@ -221,10 +223,16 @@ public class MinecraftExplosion extends Explosion {
         }
 
         if (particles) {
+            ParticleEffect particleEffect;
+
             if (!(this.power < 2.0F)) {
-                this.world.addParticle(ParticleTypes.EXPLOSION_EMITTER, this.x, this.y, this.z, 1.0, 0.0, 0.0);
+                particleEffect = ParticleTypes.EXPLOSION_EMITTER;
             } else {
-                this.world.addParticle(ParticleTypes.EXPLOSION, this.x, this.y, this.z, 1.0, 0.0, 0.0);
+                particleEffect = ParticleTypes.EXPLOSION;
+            }
+
+            for(ServerPlayerEntity serverPlayerEntity : this.world.getServer().getPlayerManager().getPlayerList()) {
+                this.world.getServer().getWorld(this.world.getRegistryKey()).spawnParticles(serverPlayerEntity, particleEffect, false, this.x, this.y, this.z, 0, 0.0, 0.0, 0.0, (double)0.0F);
             }
         }
 
@@ -248,7 +256,7 @@ public class MinecraftExplosion extends Explosion {
          */
 
         // sorts block from least y to greatest y
-        beUtil.sortAffectedBlocks(this.affectedBlocks);
+        Utils.sortAffectedBlocks(this.affectedBlocks);
         if (getAffectedBlocks().size() > 0 && blocksToReverse.size() > 0) {
             ReverseExplosion reverseExplosion = new ReverseExplosion(false, 0, getAffectedBlocks(), blocksToReverse, this.world.getRegistryKey());
             explosions.put(explosions.size(), reverseExplosion);
