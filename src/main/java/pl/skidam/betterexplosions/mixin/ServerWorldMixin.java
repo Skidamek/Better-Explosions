@@ -56,7 +56,7 @@ public abstract class ServerWorldMixin {
                 // if explosion is reversing, then continue
                 if (explosions.get(i).isReversing()) {
 
-                    if (tick % 5 != 0) {
+                    if (tick % 5 != 0) { // every 5 tick, reverse one block
                         continue;
                     }
 
@@ -86,11 +86,12 @@ public abstract class ServerWorldMixin {
                             double y = blockPos.getY();
                             double z = blockPos.getZ();
 
-                            // don't set block if player is near
+                            // don't set block if player is near, but drop item
                             if (serverWorld.getPlayers().stream().anyMatch(player -> player.squaredDistanceTo(x, y, z) < 4)) { // 4 == (box) 2^2
                                 Block.dropStacks(blockState, serverWorld, blockPos, null, null, ItemStack.EMPTY);
                                 blocksToReverse.remove(blockPos);
                                 affectedBlocks.remove(blockPos);
+                                serverWorld.getProfiler().pop();
                                 break;
                             }
 
@@ -124,8 +125,8 @@ public abstract class ServerWorldMixin {
                     continue;
                 }
 
-                // if tick is 160, then add explosion to reversing map
-                if (tick >= 160) {
+                // if tick is 200 (10 sec after boom), then start reversing explosion
+                if (tick >= 200) {
                     explosions.get(i).setReversing(true);
                 }
             }
