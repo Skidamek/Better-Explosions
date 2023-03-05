@@ -4,8 +4,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -13,6 +11,7 @@ import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
@@ -99,7 +98,7 @@ public abstract class ServerWorldMixin {
                         }
 
                         // rebuilding sound
-                        RegistryEntry<SoundEvent> registryEntry = RegistryEntry.of(SoundEvent.of(SoundEvents.BLOCK_BUBBLE_COLUMN_BUBBLE_POP.getId()));
+                        SoundEvent soundEvent = SoundEvents.BLOCK_BUBBLE_COLUMN_BUBBLE_POP;
 
                         // check if player is near
                         serverWorld.getPlayers().forEach(player -> {
@@ -111,7 +110,7 @@ public abstract class ServerWorldMixin {
                                 double k = Math.sqrt(h);
                                 Vec3d vec3d = new Vec3d(player.getX() + e / k * 2.0, player.getY() + f / k * 2.0, player.getZ() + g / k * 2.0);
                                 long l = serverWorld.getRandom().nextLong();
-                                player.networkHandler.sendPacket(new PlaySoundS2CPacket(registryEntry, SoundCategory.BLOCKS, vec3d.getX(), vec3d.getY(), vec3d.getZ(), 2.0F, 1.0F, l));
+                                player.networkHandler.sendPacket(new PlaySoundS2CPacket(soundEvent, SoundCategory.BLOCKS, vec3d.getX(), vec3d.getY(), vec3d.getZ(), 2.0F, 1.0F, l));
                             }
                         });
 

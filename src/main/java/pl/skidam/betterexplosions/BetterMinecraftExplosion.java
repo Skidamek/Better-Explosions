@@ -18,17 +18,18 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.hit.HitResult.Type;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.minecraft.world.RaycastContext.FluidHandling;
@@ -213,7 +214,7 @@ public class BetterMinecraftExplosion extends Explosion {
 
     public void affectWorld(boolean particles) {
         // explode sound
-        RegistryEntry<SoundEvent> registryEntry = RegistryEntry.of(SoundEvent.of(SoundEvents.ENTITY_GENERIC_EXPLODE.getId()));
+        SoundEvent soundEvent = SoundEvents.ENTITY_GENERIC_EXPLODE;
         this.world.getPlayers().forEach(player -> {
             if (player.squaredDistanceTo(x, y, z) < 256) { // 256 == (box) 16^2
                 double e = x - player.getX();
@@ -224,7 +225,7 @@ public class BetterMinecraftExplosion extends Explosion {
                 Vec3d vec3d = new Vec3d(player.getX() + e / k * 2.0, player.getY() + f / k * 2.0, player.getZ() + g / k * 2.0);
                 long l = this.world.getRandom().nextLong();
                 ServerPlayerEntity serverPlayerEntity = (ServerPlayerEntity) player;
-                serverPlayerEntity.networkHandler.sendPacket(new PlaySoundS2CPacket(registryEntry, SoundCategory.BLOCKS, vec3d.getX(), vec3d.getY(), vec3d.getZ(), 4.0F, (1.0F + (this.world.random.nextFloat() - this.world.random.nextFloat()) * 0.2F) * 0.7F, l));
+                serverPlayerEntity.networkHandler.sendPacket(new PlaySoundS2CPacket(soundEvent, SoundCategory.BLOCKS, vec3d.getX(), vec3d.getY(), vec3d.getZ(), 4.0F, (1.0F + (this.world.random.nextFloat() - this.world.random.nextFloat()) * 0.2F) * 0.7F, l));
             }
         });
 

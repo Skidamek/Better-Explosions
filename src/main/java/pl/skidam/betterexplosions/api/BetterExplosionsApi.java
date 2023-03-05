@@ -4,6 +4,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.minecraft.world.explosion.Explosion;
 import net.minecraft.world.explosion.ExplosionBehavior;
 import org.jetbrains.annotations.Nullable;
 import pl.skidam.betterexplosions.BetterMinecraftExplosion;
@@ -24,9 +25,9 @@ public class BetterExplosionsApi {
             double y, 
             double z, 
             float power, 
-            @Nullable World.ExplosionSourceType explosionSourceType
+            @Nullable Explosion.DestructionType destructionType
     ) {
-        return createExplosion(world, entity, null, null, x, y, z, power, false, explosionSourceType);
+        return createExplosion(world, entity, null, null, x, y, z, power, false, destructionType);
     }
 
     public static BetterMinecraftExplosion createExplosion(
@@ -37,9 +38,9 @@ public class BetterExplosionsApi {
             double z, 
             float power, 
             boolean createFire,
-            @Nullable World.ExplosionSourceType explosionSourceType
+            @Nullable Explosion.DestructionType destructionType
     ) {
-        return createExplosion(world, entity, null, null, x, y, z, power, createFire, explosionSourceType);
+        return createExplosion(world, entity, null, null, x, y, z, power, createFire, destructionType);
     }
 
     public static BetterMinecraftExplosion createExplosion(
@@ -50,9 +51,9 @@ public class BetterExplosionsApi {
             Vec3d pos,
             float power,
             boolean createFire,
-            @Nullable World.ExplosionSourceType explosionSourceType
+            @Nullable Explosion.DestructionType destructionType
     ) {
-        return createExplosion(world, entity, damageSource, behavior, pos.getX(), pos.getY(), pos.getZ(), power, createFire, explosionSourceType);
+        return createExplosion(world, entity, damageSource, behavior, pos.getX(), pos.getY(), pos.getZ(), power, createFire, destructionType);
     }
 
     public static BetterMinecraftExplosion createExplosion(
@@ -65,9 +66,9 @@ public class BetterExplosionsApi {
             double z,
             float power,
             boolean createFire,
-            @Nullable World.ExplosionSourceType explosionSourceType
+            @Nullable Explosion.DestructionType destructionType
     ) {
-        return createExplosion(world, entity, damageSource, behavior, x, y, z, power, createFire, explosionSourceType, true);
+        return createExplosion(world, entity, damageSource, behavior, x, y, z, power, createFire, destructionType, true);
     }
 
     public static BetterMinecraftExplosion createExplosion(
@@ -80,11 +81,11 @@ public class BetterExplosionsApi {
             double z,
             float power,
             boolean createFire,
-            @Nullable World.ExplosionSourceType explosionSourceType,
+            @Nullable Explosion.DestructionType destructionType,
             boolean particles
     ) {
-        BetterMinecraftExplosion.DestructionType destructionType = BetterMinecraftExplosion.DestructionType.DESTROY;
-        BetterMinecraftExplosion explosion = new BetterMinecraftExplosion(world, entity, damageSource, behavior, x, y, z, power, createFire, destructionType);
+        BetterMinecraftExplosion.DestructionType trueDestructionType = BetterMinecraftExplosion.DestructionType.DESTROY;
+        BetterMinecraftExplosion explosion = new BetterMinecraftExplosion(world, entity, damageSource, behavior, x, y, z, power, createFire, trueDestructionType);
         explosion.collectBlocksAndDamageEntities();
         explosion.affectWorld(particles);
         return explosion;

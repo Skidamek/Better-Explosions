@@ -23,7 +23,7 @@ public class WitherSkullEntityMixin {
         if (Config.fields.rebuildWitherSkullExplosion) {
             var thiz = ((WitherSkullEntity) (Object) this);
             // we only need to change this line
-            BetterExplosionsApi.createExplosion(thiz.getWorld(), thiz, thiz.getX(), thiz.getY(), thiz.getZ(), 1.0F, true, World.ExplosionSourceType.MOB);
+            BetterExplosionsApi.createExplosion(thiz.getWorld(), thiz, thiz.getX(), thiz.getY(), thiz.getZ(), 1.0F, true, null);
 
             thiz.discard();
             ci.cancel();

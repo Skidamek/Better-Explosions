@@ -19,7 +19,7 @@ public class FireballEntityMixin {
 
     @Inject(at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/World;createExplosion(Lnet/minecraft/entity/Entity;DDDFZLnet/minecraft/world/World$ExplosionSourceType;)Lnet/minecraft/world/explosion/Explosion;",
+            target = "Lnet/minecraft/world/World;createExplosion(Lnet/minecraft/entity/Entity;DDDFZLnet/minecraft/world/explosion/Explosion$DestructionType;)Lnet/minecraft/world/explosion/Explosion;",
             shift = At.Shift.BEFORE,
             remap = false
     ), method = "onCollision", cancellable = true)
@@ -27,7 +27,7 @@ public class FireballEntityMixin {
         if (Config.fields.rebuildFireballExplosion) {
             var thiz = ((FireballEntity) (Object) this);
             // we only need to change this line
-            BetterExplosionsApi.createExplosion(thiz.getWorld(), thiz, thiz.getX(), thiz.getY(), thiz.getZ(), explosionPower, true, World.ExplosionSourceType.MOB);
+            BetterExplosionsApi.createExplosion(thiz.getWorld(), thiz, thiz.getX(), thiz.getY(), thiz.getZ(), explosionPower, true, null);
 
             thiz.discard();
             ci.cancel();

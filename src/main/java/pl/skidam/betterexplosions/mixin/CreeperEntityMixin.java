@@ -4,6 +4,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.world.World;
+import net.minecraft.world.explosion.Explosion;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -27,7 +28,7 @@ public abstract class CreeperEntityMixin extends HostileEntity {
 
     @Inject(at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/World;createExplosion(Lnet/minecraft/entity/Entity;DDDFLnet/minecraft/world/World$ExplosionSourceType;)Lnet/minecraft/world/explosion/Explosion;",
+            target = "Lnet/minecraft/world/World;createExplosion(Lnet/minecraft/entity/Entity;DDDFLnet/minecraft/world/explosion/Explosion$DestructionType;)Lnet/minecraft/world/explosion/Explosion;",
             shift = At.Shift.BEFORE,
             remap = false
     ), method = "explode", cancellable = true)
@@ -36,7 +37,7 @@ public abstract class CreeperEntityMixin extends HostileEntity {
             var thiz = ((CreeperEntity) (Object) this);
             float f = thiz.shouldRenderOverlay() ? 2.0F : 1.0F;
             // We only need to change this line
-            BetterExplosionsApi.createExplosion(thiz.getWorld(), thiz, thiz.getX(), thiz.getY(), thiz.getZ(), (float)explosionRadius * f, World.ExplosionSourceType.MOB);
+            BetterExplosionsApi.createExplosion(thiz.getWorld(), thiz, thiz.getX(), thiz.getY(), thiz.getZ(), (float)explosionRadius * f, null);
 
             thiz.discard();
             this.spawnEffectsCloud();
