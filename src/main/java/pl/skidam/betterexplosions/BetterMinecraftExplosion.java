@@ -6,6 +6,8 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import java.util.*;
 
+import it.unimi.dsi.fastutil.objects.ObjectListIterator;
+import net.minecraft.block.AbstractFireBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.enchantment.ProtectionEnchantment;
