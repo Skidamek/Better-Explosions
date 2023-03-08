@@ -2,6 +2,7 @@ package pl.skidam.betterexplosions.mixin;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
 import net.minecraft.registry.RegistryKey;
@@ -12,6 +13,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Final;
@@ -86,8 +88,10 @@ public abstract class ServerWorldMixin {
                         int y = blockPos.getY();
                         int z = blockPos.getZ();
 
-                        // don't set block if player is near, but drop item
-                        if (serverWorld.getPlayers().stream().anyMatch(player -> player.getBlockPos().getX() == x && player.getBlockPos().getY() <= y && player.getBlockPos().getZ() == z)) {
+                        List<Entity> entities = serverWorld.getOtherEntities(null, new Box(x+1,y+5,z+1,x-1, y,z-1));
+
+                        // don't set block if entity is near, but drop item
+                        if (entities.stream().anyMatch(entity -> entity.getBlockPos().getX() == x && entity.getBlockPos().getY() <= y && entity.getBlockPos().getZ() == z)) {
                             Block.dropStacks(blockState, serverWorld, blockPos, null, null, ItemStack.EMPTY);
                             blocksToRebuild.remove(blockPos);
                             affectedBlocks.remove(blockPos);
@@ -112,8 +116,15 @@ public abstract class ServerWorldMixin {
                             }
                         });
 
+                        // drop item if block is not air to don't lose items
+                        BlockState currentBlockState = serverWorld.getBlockState(blockPos);
+                        if (!currentBlockState.isAir()) {
+                            Block.dropStacks(currentBlockState, serverWorld, blockPos, null, null, ItemStack.EMPTY);
+                        }
+
                         // set block
                         serverWorld.setBlockState(blockPos, blockState);
+
                     } else {
                         LOGGER.error("BlockState is null! BlockPos: " + blockPos);
                     }
