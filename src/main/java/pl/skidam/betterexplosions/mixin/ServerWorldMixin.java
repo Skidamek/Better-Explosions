@@ -13,7 +13,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
-import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -37,8 +36,6 @@ public abstract class ServerWorldMixin {
     @Final
     @Shadow
     private MinecraftServer server;
-
-    @Shadow @Final private static Logger LOGGER;
 
     @Inject(method = "tick", at = @At("TAIL"))
     private void tick(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
@@ -84,12 +81,12 @@ public abstract class ServerWorldMixin {
 
                     if (blockState != null) {
 
-                        double x = blockPos.getX();
-                        double y = blockPos.getY();
-                        double z = blockPos.getZ();
+                        int x = blockPos.getX();
+                        int y = blockPos.getY();
+                        int z = blockPos.getZ();
 
                         // don't set block if player is near, but drop item
-                        if (serverWorld.getPlayers().stream().anyMatch(player -> player.squaredDistanceTo(x, y, z) < 3.25)) { // 3.25 ~~ (box) 1.8^2
+                        if (serverWorld.getPlayers().stream().anyMatch(player -> player.getBlockPos().getX() == x && player.getBlockPos().getY() <= y && player.getBlockPos().getZ() == z)) {
                             Block.dropStacks(blockState, serverWorld, blockPos, null, null, ItemStack.EMPTY);
                             blocksToRebuild.remove(blockPos);
                             affectedBlocks.remove(blockPos);

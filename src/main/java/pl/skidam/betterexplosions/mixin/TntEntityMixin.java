@@ -1,7 +1,6 @@
 package pl.skidam.betterexplosions.mixin;
 
 import net.minecraft.entity.TntEntity;
-import net.minecraft.world.explosion.Explosion;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -15,8 +14,7 @@ public class TntEntityMixin {
     @Inject(at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/World;createExplosion(Lnet/minecraft/entity/Entity;DDDFLnet/minecraft/world/explosion/Explosion$DestructionType;)Lnet/minecraft/world/explosion/Explosion;",
-            shift = At.Shift.BEFORE,
-            remap = false
+            shift = At.Shift.BEFORE
     ), method = "explode", cancellable = true)
     private void explode(CallbackInfo ci) {
         if (Config.fields.rebuildTntExplosion) {

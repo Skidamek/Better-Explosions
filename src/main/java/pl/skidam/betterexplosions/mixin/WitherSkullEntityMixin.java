@@ -2,7 +2,6 @@ package pl.skidam.betterexplosions.mixin;
 
 import net.minecraft.entity.projectile.WitherSkullEntity;
 import net.minecraft.util.hit.HitResult;
-import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -15,9 +14,8 @@ public class WitherSkullEntityMixin {
 
     @Inject(at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/World;createExplosion(Lnet/minecraft/entity/Entity;DDDFZLnet/minecraft/world/World$ExplosionSourceType;)Lnet/minecraft/world/explosion/Explosion;",
-            shift = At.Shift.BEFORE,
-            remap = false
+            target = "Lnet/minecraft/world/World;createExplosion(Lnet/minecraft/entity/Entity;DDDFZLnet/minecraft/world/explosion/Explosion$DestructionType;)Lnet/minecraft/world/explosion/Explosion;",
+            shift = At.Shift.BEFORE
     ), method = "onCollision", cancellable = true)
     public void onCollision(HitResult hitResult, CallbackInfo ci) {
         if (Config.fields.rebuildWitherSkullExplosion) {
