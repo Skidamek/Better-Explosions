@@ -20,8 +20,7 @@ public class FireballEntityMixin {
     @Inject(at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/World;createExplosion(Lnet/minecraft/entity/Entity;DDDFZLnet/minecraft/world/World$ExplosionSourceType;)Lnet/minecraft/world/explosion/Explosion;",
-            shift = At.Shift.BEFORE,
-            remap = false
+            shift = At.Shift.BEFORE
     ), method = "onCollision", cancellable = true)
     public void onCollision(HitResult hitResult, CallbackInfo ci) {
         if (Config.fields.rebuildFireballExplosion) {

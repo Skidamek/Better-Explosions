@@ -15,8 +15,7 @@ public class TntEntityMixin {
     @Inject(at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/World;createExplosion(Lnet/minecraft/entity/Entity;DDDFLnet/minecraft/world/World$ExplosionSourceType;)Lnet/minecraft/world/explosion/Explosion;",
-            shift = At.Shift.BEFORE,
-            remap = false
+            shift = At.Shift.BEFORE
     ), method = "explode", cancellable = true)
     private void explode(CallbackInfo ci) {
         if (Config.fields.rebuildTntExplosion) {
