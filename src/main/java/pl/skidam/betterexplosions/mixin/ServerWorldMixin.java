@@ -118,11 +118,11 @@ public abstract class ServerWorldMixin {
                         // drop item if block is not air to don't lose items
                         BlockState currentBlockState = serverWorld.getBlockState(blockPos);
                         if (!currentBlockState.isAir()) {
-                            Block.dropStacks(currentBlockState, serverWorld, blockPos, null, null, ItemStack.EMPTY);
+                            Block.dropStacks(blockState, serverWorld, blockPos, null, null, ItemStack.EMPTY);
+                        } else {
+                            // set block
+                            serverWorld.setBlockState(blockPos, blockState);
                         }
-
-                        // set block
-                        serverWorld.setBlockState(blockPos, blockState);
 
                     } else {
                         LOGGER.error("BlockState is null! BlockPos: " + blockPos);
