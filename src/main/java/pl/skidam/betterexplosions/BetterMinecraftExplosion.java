@@ -8,8 +8,10 @@ import java.util.*;
 
 import it.unimi.dsi.fastutil.objects.ObjectListIterator;
 import net.minecraft.block.AbstractFireBlock;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.enchantment.ProtectionEnchantment;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -43,6 +45,7 @@ import net.minecraft.world.explosion.ExplosionBehavior;
 import org.jetbrains.annotations.Nullable;
 import pl.skidam.betterexplosions.data.RebuildExplosion;
 
+import static pl.skidam.betterexplosions.BetterExplosions.LOGGER;
 import static pl.skidam.betterexplosions.BetterExplosions.explosions;
 
 /**
@@ -250,8 +253,20 @@ public class BetterMinecraftExplosion extends Explosion {
 
         // Normal minecraft explosion
         for (BlockPos blockPos : getAffectedBlocks()) {
+
             BlockState blockState = this.world.getBlockState(blockPos);
+
             if (!blockState.isAir()) {
+
+                // compatibility with forgotten graves
+                // TODO make it work to save nbt data (block entities) to don't need to use that kind of shit method
+                Block block = blockState.getBlock();
+                if (block.toString().contains("forgottengraves:grave")) {
+                    // remove this block from affected blocks
+                    affectedBlocks.remove(blockPos);
+                    continue;
+                }
+
                 this.world.getProfiler().push("better_explosions_explosion");
                 blocksToRebuild.put(blockPos, blockState);
                 this.world.setBlockState(blockPos, Blocks.AIR.getDefaultState(), 3);
