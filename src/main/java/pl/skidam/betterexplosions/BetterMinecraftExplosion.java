@@ -6,9 +6,6 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import java.util.*;
 
-import it.unimi.dsi.fastutil.objects.ObjectListIterator;
-import net.minecraft.block.AbstractFireBlock;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
@@ -19,6 +16,7 @@ import net.minecraft.entity.TntEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
@@ -26,14 +24,12 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.hit.HitResult.Type;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.minecraft.world.RaycastContext.FluidHandling;
@@ -43,6 +39,7 @@ import net.minecraft.world.explosion.EntityExplosionBehavior;
 import net.minecraft.world.explosion.Explosion;
 import net.minecraft.world.explosion.ExplosionBehavior;
 import org.jetbrains.annotations.Nullable;
+import pl.skidam.betterexplosions.data.BlockSave;
 import pl.skidam.betterexplosions.data.RebuildExplosion;
 
 import static pl.skidam.betterexplosions.BetterExplosions.LOGGER;
@@ -184,8 +181,7 @@ public class BetterMinecraftExplosion extends Explosion {
         List<Entity> list = this.world.getOtherEntities(this.entity, new Box((double)k, (double)r, (double)t, (double)l, (double)s, (double)u));
         Vec3d vec3d = new Vec3d(this.x, this.y, this.z);
 
-        for (Entity value : list) {
-            Entity entity = (Entity) value;
+        for (Entity entity : list) {
             if (!entity.isImmuneToExplosion()) {
                 double w = Math.sqrt(entity.squaredDistanceTo(vec3d)) / (double) q;
                 if (w <= 1.0) {
@@ -249,35 +245,36 @@ public class BetterMinecraftExplosion extends Explosion {
         }
 
         Util.shuffle(this.affectedBlocks, this.world.random);
-        Map<BlockPos, BlockState> blocksToRebuild = new HashMap<>(); // TODO store NBT data
+        List<BlockSave> blockSaveList = new ObjectArrayList<>();
 
-        // Normal minecraft explosion
         for (BlockPos blockPos : getAffectedBlocks()) {
 
             BlockState blockState = this.world.getBlockState(blockPos);
 
             if (!blockState.isAir()) {
 
-                // compatibility with forgotten graves
-                // TODO make it work to save nbt data (block entities) to don't need to use that kind of shit method
-                Block block = blockState.getBlock();
-                if (block.toString().contains("forgottengraves:grave")) {
-                    // remove this block from affected blocks
-                    affectedBlocks.remove(blockPos);
-                    continue;
+                BlockEntity blockEntity = this.world.getBlockEntity(blockPos);
+
+                // read nbt data and save it
+                NbtCompound nbtCompound = new NbtCompound();
+                if (blockEntity != null) {
+                    blockEntity.writeNbt(nbtCompound); // its like nbtCompound = blockEntity.getNbt()
                 }
 
                 this.world.getProfiler().push("better_explosions_explosion");
-                blocksToRebuild.put(blockPos, blockState);
-                this.world.setBlockState(blockPos, Blocks.AIR.getDefaultState(), 3);
+                blockSaveList.add(new BlockSave(blockPos, blockState, nbtCompound));
+                if (blockEntity != null) {
+                    blockEntity.readNbt(new NbtCompound()); // its like blockEntity.setNbt(new NbtCompound())
+                }
+                this.world.setBlockState(blockPos, Blocks.AIR.getDefaultState(), 3, 0);
                 this.world.getProfiler().pop();
             }
         }
 
         // Rebuild explosion stuff
         // See pl.skidam.betterexplosions.mixin.ServerWorldMixin
-        if (getAffectedBlocks().size() > 0 && blocksToRebuild.size() > 0) {
-            RebuildExplosion rebuildExplosion = new RebuildExplosion(false, 0, blocksToRebuild, this.world.getRegistryKey());
+        if (getAffectedBlocks().size() > 0 && blockSaveList.size() > 0) {
+            RebuildExplosion rebuildExplosion = new RebuildExplosion(false, 0, blockSaveList, this.world.getRegistryKey());
             explosions.put(explosions.size(), rebuildExplosion);
         }
     }

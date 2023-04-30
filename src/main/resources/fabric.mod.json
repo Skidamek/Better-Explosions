@@ -20,8 +20,8 @@
 	"mixins": [
 		"better-explosions.mixins.json"
 	],
+	"accessWidener" : "better-explosions.accesswidener",
 	"depends": {
-		"fabricloader": ">=0.14.14",
 		"java": ">=17",
 		"fabric-api": "*"
 	}

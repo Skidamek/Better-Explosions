@@ -61,7 +61,7 @@ public class Config {
     public static class ConfigFields {
         public boolean rebuildCreeperExplosion = true;
         public boolean rebuildTntExplosion = false;
-        public boolean rebuildFireballExplosion = false;
+        public boolean rebuildFireballExplosion = true;
         public boolean rebuildWitherSkullExplosion = false;
         public int startRebuildingAfter = 200; // ticks
         public int rebuildOneBlockEvery = 5; // ticks

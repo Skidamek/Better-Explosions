@@ -2,7 +2,9 @@ package pl.skidam.betterexplosions.mixin;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
 import net.minecraft.server.MinecraftServer;
@@ -21,6 +23,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import pl.skidam.betterexplosions.data.BlockSave;
 import pl.skidam.betterexplosions.config.Config;
 
 import java.util.*;
@@ -53,18 +56,21 @@ public abstract class ServerWorldMixin {
                 explosions.get(i).setTicks(tick);
 
                 // if explosion is reversing, then continue
-                if (explosions.get(i).isRebuilding()) {
+                if (explosions.get(i).isReBuilding()) {
 
                     if (tick % Config.fields.rebuildOneBlockEvery != 0) { // by default every 5 tick, rebuilding one block
                         continue;
                     }
 
-                    Map<BlockPos, BlockState> blocksToRebuild = explosions.get(i).getBlocksToRebuild();
-                    Set<BlockPos> affectedBlocks = explosions.get(i).getBlocksToRebuild().keySet();
+                    List<BlockSave> blockSaves = explosions.get(i).getBlockSaves();
+                    Set<BlockPos> affectedBlocks = new HashSet<>();
+                    for (BlockSave blockSave : blockSaves) {
+                        affectedBlocks.add(blockSave.getPos());
+                    }
                     RegistryKey<World> world = explosions.get(i).getWorld();
 
                     // remove explosion from map if it's empty
-                    if (affectedBlocks.size() == 0 || blocksToRebuild.size() == 0 || world == null) {
+                    if (blockSaves.size() == 0 || world == null) {
                         explosionsIterator.remove();
                         continue;
                     }
@@ -79,7 +85,11 @@ public abstract class ServerWorldMixin {
 
                     // get lowest block (y) from affected blocks
                     BlockPos blockPos = Collections.min(affectedBlocks, Comparator.comparingInt(BlockPos::getY));
-                    BlockState blockState = blocksToRebuild.get(blockPos);
+                    BlockSave blockSaveOfPos = blockSaves.stream()
+                            .filter(blockSave -> blockSave.getPos().equals(blockPos))
+                            .toList().get(0);
+
+                    BlockState blockState = blockSaveOfPos.getState();
 
                     if (blockState != null) {
 
@@ -90,10 +100,16 @@ public abstract class ServerWorldMixin {
                         List<Entity> entities = serverWorld.getOtherEntities(null, new Box(x+1,y+5,z+1,x-1, y,z-1));
 
                         // don't set block if entity is near, but drop item
-                        if (entities.stream().anyMatch(entity -> entity.getBlockPos().getX() == x && entity.getBlockPos().getY() <= y && entity.getBlockPos().getZ() == z)) {
+                        if (entities.stream().anyMatch(entity ->
+                                entity instanceof LivingEntity &&
+                                entity.getBlockPos().getX() == x &&
+                                entity.getBlockPos().getY() <= y &&
+                                entity.getBlockPos().getZ() == z)) {
+
                             Block.dropStacks(blockState, serverWorld, blockPos, null, null, ItemStack.EMPTY);
-                            blocksToRebuild.remove(blockPos);
-                            affectedBlocks.remove(blockPos);
+                            blockSaves.remove(blockSaveOfPos);
+
+                            explosions.get(i).setBlockSaves(blockSaves);
                             serverWorld.getProfiler().pop();
                             break;
                         }
@@ -120,17 +136,21 @@ public abstract class ServerWorldMixin {
                         if (!currentBlockState.isAir()) {
                             Block.dropStacks(blockState, serverWorld, blockPos, null, null, ItemStack.EMPTY);
                         } else {
-                            // set block
-                            serverWorld.setBlockState(blockPos, blockState);
+                            // set block with nbt if possible
+                            serverWorld.setBlockState(blockPos, blockState, 3, 0);
+                            BlockEntity blockEntity = serverWorld.getBlockEntity(blockPos);
+                            if (blockEntity != null) {
+                                blockEntity.readNbt(blockSaveOfPos.getNbt());
+                                blockEntity.markDirty();
+                            }
                         }
-
                     } else {
-                        LOGGER.error("BlockState is null! BlockPos: " + blockPos);
+                        LOGGER.error("BlockState is null for blockPos: " + blockPos);
                     }
 
                     // remove block from lists
-                    blocksToRebuild.remove(blockPos);
-                    affectedBlocks.remove(blockPos);
+                    blockSaves.remove(blockSaveOfPos);
+                    explosions.get(i).setBlockSaves(blockSaves);
 
                     serverWorld.getProfiler().pop();
                     continue;
@@ -138,7 +158,7 @@ public abstract class ServerWorldMixin {
 
                 // By default, if tick is 200 (10 sec after boom), then start rebuilding explosion
                 if (tick >= Config.fields.startRebuildingAfter) {
-                    explosions.get(i).setReversing(true);
+                    explosions.get(i).setReBuilding(true);
                 }
             }
         }
